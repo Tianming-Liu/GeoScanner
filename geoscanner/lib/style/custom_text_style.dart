@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CustomTextStyle {
+  static TextStyle appTitle = TextStyle(
+      fontFamily: GoogleFonts.cormorantGaramond().fontFamily,
+      color: const Color.fromARGB(255, 0, 0, 0),
+      fontSize: 28,
+      fontWeight: FontWeight.w300);
   static TextStyle normalText = TextStyle(
     fontFamily: GoogleFonts.roboto().fontFamily,
     color: const Color.fromARGB(255, 0, 0, 0),
