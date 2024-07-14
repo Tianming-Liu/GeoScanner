@@ -63,12 +63,12 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
       for (var key in _sensorNameMap.keys) {
         double? value;
         if (entry['sensorData'] != null && entry['sensorData'][key] != null) {
-          value = entry['sensorData'][key];
+          value = (entry['sensorData'][key] as num).toDouble();
         } else if (entry['phoneData'] != null &&
             entry['phoneData'][key] != null) {
-          value = entry['phoneData'][key];
+          value = (entry['phoneData'][key] as num).toDouble();
         } else if (entry['dlData'] != null && entry['dlData'][key] != null) {
-          value = entry['dlData'][key];
+          value = (entry['dlData'][key] as num).toDouble();
         }
 
         if (value != null) {
