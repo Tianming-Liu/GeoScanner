@@ -24,7 +24,7 @@ jobs:
 
       - name: Replace API Key in AndroidManifest.xml
         run: |
-          sed -i 's/${MAPS_API_KEY}/${{ secrets.MAP_API_KEY }}/g' geoscanner/android/app/src/main/AndroidManifest.xml
+          sed -i 's/${MAP_API_KEY}/${{ secrets.MAP_API_KEY }}/g' geoscanner/android/app/src/main/AndroidManifest.xml
 
       - name: Set up JDK
         uses: actions/setup-java@v3
