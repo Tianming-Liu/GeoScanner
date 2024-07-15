@@ -1,0 +1,75 @@
+name: Flutter Build and Upload Android APK
+
+on:
+  push:                 # This is the condition that the action will run on
+    tags:
+    - "v*.*.*"          # In this case when you tag your commit with v1.0.0 for example
+
+defaults:  
+  run:
+    working-directory: geoscanner/
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # This is the type of machine we want to run the action on
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3     # Checkout the Repository on the Virtual Machine
+
+      - name: Replace API Key in AndroidManifest.xml
+        run: |
+          sed -i 's/${MAPS_API_KEY}/${{ secrets.MAP_API_KEY }}/g' android/app/src/main/AndroidManifest.xml
+
+      - name: Set up JDK              # Setup JAVA to build the Android APK for us
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: microsoft
+          
+      - name: Install yq
+        uses: mikefarah/yq@v4.42.1
+
+      - name: Get pubspec version
+        id: get_flutter_app_version
+        run: |
+          VERSION=$(yq .version | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' pubspec.yaml | head -n 1)
+          echo "TAG_VERSION=$VERSION" >> $GITHUB_OUTPUT
+  
+      - name: Create git tag
+        run: |
+          git tag "v${{ steps.get_flutter_app_version.outputs.TAG_VERSION }}"
+
+      - name: Install Flutter               # Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'main'
+
+      - name: Get Flutter dependencies      # Get the Libraries and Dependencies
+        run: flutter pub get
+
+      - name: Build APK Release             # Build a release
+        run: flutter build apk --release
+
+      - name: Build an AppBundle            # App Bundles are useful for Google Play Store
+        run: flutter build appbundle --release
+
+      - name: Save APK to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: flutter-apk
+          path: geoscanner/build/app/outputs/flutter-apk/*.apk
+
+      - name: Save APPBUNDLE to Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: flutter-appbundle
+          path: geoscanner/build/app/outputs/bundle/release/*.aab
+
+      - name: Create Github Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "geoscanner/build/app/outputs/bundle/release/*.aab,geoscanner/build/app/outputs/flutter-apk/*.apk"
+          tag: "v${{ steps.get_flutter_app_version.outputs.TAG_VERSION }}"
