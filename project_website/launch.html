@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GeoScanner Mapping</title>
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v3.5.1/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/launch_style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="controls">
+      <span class="material-symbols-outlined">list</span>
+      <select id="dataControl" class="roboto-light">
+        <option value="temperature">Temperature</option>
+        <option value="humidity">Humidity</option>
+        <option value="pressure">Pressure</option>
+        <option value="gas">Gas</option>
+        <option value="noise">Noise Level</option>
+        <option value="mvc">Motor Vehicles</option>
+        <option value="nmvc">Non-Motor Vehicles</option>
+        <option value="pc">People Count</option>
+        <option value="sp">Sky Percentage</option>
+        <option value="tp">Tree Percentage</option>
+      </select>
+    </div>
+    <div id="map"></div>
+    <div id="timeline"></div>
+
+    <!-- Import Mapbox GL JS and deck.gl -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.5.1/mapbox-gl.js" defer></script>
+    <script src="https://unpkg.com/deck.gl@9.0.0/dist.min.js" defer></script>
+    <script src="https://unpkg.com/@deck.gl/layers@9.0.0/dist.min.js" defer></script>
+    <script src="https://unpkg.com/@deck.gl/mapbox@9.0.0/dist.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7" defer></script>
+
+    <!-- Import Firebase SDK -->
+    <script type="module" src="scripts/firebase.js" defer></script>
+    <script type="module" src="scripts/launch_main.js" defer></script>
+  </body>
+</html>

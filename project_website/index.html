@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoScanner</title>
+  <link rel="icon" href="./src/favicon.svg" type="image/svg+xml" />
+  <!-- Import Mapbox GL JS and deck.gl -->
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.5.1/mapbox-gl.js"></script>
+  <script src="https://unpkg.com/deck.gl@9.0.0/dist.min.js"></script>
+  <script src="https://unpkg.com/@deck.gl/layers@9.0.0/dist.min.js"></script>
+  <script src="https://unpkg.com/@deck.gl/mapbox@9.0.0/dist.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      background-color: #000000;
+    }
+
+    .logo_area {
+      background: #000000;
+      color: #ffffff;
+      padding-top: 20px;
+      padding-bottom: 20px;
+      border-bottom: 0.5px solid #5b5b5b;
+      display: flex;
+      align-items: center;
+      width: 90%;
+      margin: 0 auto;
+    }
+
+    .logo_area img {
+      margin-right: 10px;
+      width: 70px;
+      border-radius: 10px;
+    }
+
+    .logo_area h1 {
+      margin: 0;
+      margin-left: 20px;
+      font-size: 60px;
+      flex-grow: 1;
+    }
+
+    .logo_area h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 200;
+    }
+
+    .container {
+      width: 90%;
+      margin: 0 auto;
+      background-color: rgb(0, 0, 0);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding-top: 30px;
+    }
+    .title_section {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .title_section .main_title {
+      font-size: 36px;
+      color: #500778;
+    }
+    .title_section .sub_title {
+      font-size: 18px;
+      color: #555;
+    }
+    .section {
+      margin-bottom: 40px;
+    }
+    .section h2 {
+      color: #ffffff;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .section p,
+    .section ul {
+      line-height: 1.6;
+      font-size: 18px;
+      color: #d6d6d6;
+      font-weight: 200;
+    }
+
+    .section p span {
+      font-weight: bold;
+      font-size: 20px;
+    }
+    .section ul {
+      list-style-type: disc;
+      padding-left: 20px;
+    }
+    .map-container {
+      position: relative;
+      width: 100%;
+      height: 400px;
+      background: url("map-background.jpg") no-repeat center center/cover;
+      margin-bottom: 40px;
+      border: #5e5e5e;
+      border-style: solid;
+      border-width: 0.1px;
+    }
+    .launch-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 15px 30px;
+      border-radius: 30px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .launch-button a {
+      color: #000000;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .launch-button:hover {
+      background: #000000;
+      border: solid 2px #ffffff;
+    }
+    .launch-button:hover a {
+      color: white;
+    }
+    .contact-section {
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo_area">
+    <img src="./src/logo.png" alt="GeoScanner Logo" />
+    <h1>GeoScanner</h1>
+    <h2>A Portable Mobile Sensing Platform</h2>
+  </div>
+
+  <div class="container">
+    <div class="section">
+      <h2>Project Introduction</h2>
+      <p>
+        <span>GeoScanner</span> is an innovative project combining
+        self-designed hardware sensor modules and a mobile application,
+        dedicated to comprehensively monitoring urban environments. Our goal
+        is to achieve high-precision monitoring of various
+        <span>environmental and street view</span> indicators through mobile
+        sensing technology. We aim to popularize this technology at the
+        <span>individual level</span>, creating a more extensive and precise
+        urban measurement network.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>Features</h2>
+      <ul>
+        <li>Self-designed hardware sensor modules</li>
+        <li>Mobile application</li>
+        <li>Multi-parameter monitoring</li>
+        <li>Monitoring route planning</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Solutions</h2>
+      <ul>
+        <li>High-precision environmental monitoring</li>
+        <li>Wide-coverage mobile sensing</li>
+        <li>Data sharing and application</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Application Scenarios</h2>
+      <ul>
+        <li>Healthy living</li>
+        <li>Urban management</li>
+        <li>Academic research</li>
+      </ul>
+    </div>
+
+    <div class="map-container">
+      <div class="launch-button">
+        <a href="launch.html">Launch Application</a>
+      </div>
+    </div>
+
+    <div class="section contact-section">
+      <h2>Join Us</h2>
+      <p>
+        If you are interested in our project, please download the GeoScanner
+        mobile application and become a part of our urban sensing community.
+        Together, we can create a better urban environment!
+      </p>
+      <p>Download the App:</p>
+      <a class="button" href="#">App Store Download Link</a>
+      <a class="button" href="#">Google Play Download Link</a>
+    </div>
+
+    <div class="section contact-section">
+      <h2>Contact Us</h2>
+      <p>
+        If you have any questions or suggestions, feel free to contact us at:
+      </p>
+      <p>Email: liutm23@outlook.com</p>
+      <p>Phone: +44 7436854541</p>
+      <p>Address: One Pool Street, 1 Pool Street, London, E20 2AF</p>
+    </div>
+  </div>
+</body>
+</html>
