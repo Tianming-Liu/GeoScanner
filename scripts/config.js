@@ -1,0 +1,4 @@
+export default {
+  MAPBOX_ACCESS_TOKEN: 'pk.eyJ1IjoidGlhbm1pbmdsaXUiLCJhIjoiY2x5OHU4MTFjMGg3cTJqc2Y4em1xcXF5eCJ9.O0Pgz4NL7-liqiKNPCYORg',
+  FIREBASE_API_KEY: 'AIzaSyDhU3gKo-RpzcJ1HgBCc6sLD0dbzBGArUY'
+};
