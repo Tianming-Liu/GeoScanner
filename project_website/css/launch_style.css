@@ -50,7 +50,7 @@ body {
   height: 200px; /* Fixed height for the timeline */
   background-color: rgba(0, 0, 0, 0.8);
   z-index: 10;
-  box-shadow: 0 -2px 6px rgba(25, 22, 22, 0.3); /* Optional shadow for better visibility */
+  box-shadow: 0 -2px 6px rgba(25, 22, 22, 0.3);
 }
 
 .legend {
