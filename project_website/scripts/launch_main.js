@@ -490,7 +490,7 @@ function createTimelineChart(records, hourlyData, dataType) {
     svg
       .append("circle")
       .attr("cx", isNaN(cxValue) ? 0 : cxValue)
-      .attr("cy", cyValue) // Use fixed height above rectangles
+      .attr("cy", cyValue)
       .attr("r", radius)
       .attr("fill", "rgba(255, 255, 255, 0.75)")
       .attr("stroke", "black")
