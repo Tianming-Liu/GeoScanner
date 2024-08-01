@@ -485,7 +485,7 @@ function createTimelineChart(records, hourlyData, dataType) {
     const cxValue = (startX + endX) / 2;
 
     // Adjust the cyValue to a fixed height above the rectangles
-    const cyValue = -circleOffset / 2; // for example, 10 pixels above the rectangles
+    const cyValue = -circleOffset / 2;
 
     svg
       .append("circle")
