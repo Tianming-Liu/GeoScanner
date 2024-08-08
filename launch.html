@@ -20,28 +20,48 @@
   </head>
   <body>
     <div id="controls">
-      <span class="material-symbols-outlined">list</span>
-      <select id="dataControl" class="roboto-light">
-        <option value="temperature">Temperature</option>
-        <option value="humidity">Humidity</option>
-        <option value="pressure">Pressure</option>
-        <option value="gas">Gas</option>
-        <option value="noise">Noise Level</option>
-        <option value="mvc">Motor Vehicles</option>
-        <option value="nmvc">Non-Motor Vehicles</option>
-        <option value="pc">People Count</option>
-        <option value="sp">Sky Percentage</option>
-        <option value="tp">Tree Percentage</option>
-      </select>
+      <div class="control-row">
+        <span class="material-symbols-outlined">list</span>
+        <label for="dataControl">Color Mode</label>
+        <select id="dataControl" class="roboto-light">
+          <option value="temperature">Temperature</option>
+          <option value="humidity">Humidity</option>
+          <option value="pressure">Pressure</option>
+          <option value="gas">Gas</option>
+          <option value="noise">Noise Level</option>
+          <option value="mvc">Motor Vehicles</option>
+          <option value="nmvc">Non-Motor Vehicles</option>
+          <option value="pc">People Count</option>
+          <option value="sp">Sky Percentage</option>
+          <option value="tp">Tree Percentage</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <span class="material-symbols-outlined"> equalizer </span>
+        <label for="displayMode">Chart Mode</label>
+        <select id="displayMode">
+          <option value="recordCount">Record Count</option>
+          <option value="averageValue">Average Value</option>
+        </select>
+      </div>
     </div>
     <div id="map"></div>
     <div id="timeline"></div>
 
     <!-- Import Mapbox GL JS and deck.gl -->
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.5.1/mapbox-gl.js" defer></script>
+    <script
+      src="https://api.mapbox.com/mapbox-gl-js/v3.5.1/mapbox-gl.js"
+      defer
+    ></script>
     <script src="https://unpkg.com/deck.gl@9.0.0/dist.min.js" defer></script>
-    <script src="https://unpkg.com/@deck.gl/layers@9.0.0/dist.min.js" defer></script>
-    <script src="https://unpkg.com/@deck.gl/mapbox@9.0.0/dist.min.js" defer></script>
+    <script
+      src="https://unpkg.com/@deck.gl/layers@9.0.0/dist.min.js"
+      defer
+    ></script>
+    <script
+      src="https://unpkg.com/@deck.gl/mapbox@9.0.0/dist.min.js"
+      defer
+    ></script>
     <script src="https://cdn.jsdelivr.net/npm/d3@7" defer></script>
 
     <!-- Import Firebase SDK -->

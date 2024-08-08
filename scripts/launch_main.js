@@ -4,6 +4,7 @@ import config from "./config.js";
 let dataPoints = [];
 let records = [];
 let hourlyData = {};
+let dailyData = {};
 let map;
 let overlay;
 let scatterplotLayer;
@@ -12,6 +13,34 @@ let animationFrameId;
 const speed = 1;
 let pathsData = [];
 let isAnimating = false;
+
+let selectedDataType = "temperature";
+let selectedDisplayMode = "recordCount";
+
+const gradientScales = {
+  temperature: d3
+    .scaleSequential(d3.interpolateRgb("blue", "red"))
+    .domain([0, 40]),
+  humidity: d3
+    .scaleSequential(d3.interpolateRgb("lightblue", "darkblue"))
+    .domain([0, 100]),
+  pressure: d3
+    .scaleSequential(d3.interpolateRgb("lightgreen", "darkgreen"))
+    .domain([950, 1050]),
+  gas: d3
+    .scaleSequential(d3.interpolateRgb("yellow", "brown"))
+    .domain([0, 500]),
+  noise: d3
+    .scaleSequential(d3.interpolateRgb("purple", "orange"))
+    .domain([0, 100]),
+  mvc: d3
+    .scaleSequential(d3.interpolateRgb("lightgray", "black"))
+    .domain([0, 10]),
+  nmvc: d3.scaleSequential(d3.interpolateRgb("pink", "purple")).domain([0, 10]),
+  pc: d3.scaleSequential(d3.interpolateRgb("cyan", "blue")).domain([0, 100]),
+  sp: d3.scaleSequential(d3.interpolateRgb("white", "red")).domain([0, 100]),
+  tp: d3.scaleSequential(d3.interpolateRgb("lime", "green")).domain([0, 100]),
+};
 
 async function fetchUserIDs() {
   const usersCollectionRef = collection(db, "users");
@@ -31,12 +60,12 @@ async function fetchUserRecords(userId) {
 }
 
 function getColorByValue(value, type) {
-  const min = Math.min(...dataPoints.map((dp) => dp[type]));
-  const max = Math.max(...dataPoints.map((dp) => dp[type]));
-  const range = max - min;
-  const normalizedValue = (value - min) / range;
-  const colorValue = Math.floor(normalizedValue * 255);
-  return [colorValue, 0, 255 - colorValue, 100];
+  const scale = gradientScales[type];
+  if (scale) {
+    const color = d3.color(scale(value));
+    return [color.r, color.g, color.b, 100];
+  }
+  return [0, 0, 0, 100]; // Default color if no scale is found
 }
 
 function parseTime(time) {
@@ -59,6 +88,7 @@ async function displayAllUserRecords() {
   records = [];
   pathsData = [];
   hourlyData = {};
+  dailyData = {};
 
   for (const userId of userIDs) {
     const userRecords = await fetchUserRecords(userId);
@@ -128,6 +158,35 @@ async function displayAllUserRecords() {
             hourlyData[hour].pc.push(point.pc);
             hourlyData[hour].sp.push(point.sp);
             hourlyData[hour].tp.push(point.tp);
+
+            const date = parseTime(time).getDate();
+            const month = parseTime(time).getMonth();
+            const dateId = `${month}-${date}`;
+            if (!dailyData[dateId]) {
+              dailyData[dateId] = {
+                noise: [],
+                temperature: [],
+                humidity: [],
+                pressure: [],
+                gas: [],
+                mvc: [],
+                nmvc: [],
+                pc: [],
+                sp: [],
+                tp: [],
+              };
+            }
+
+            dailyData[dateId].noise.push(point.noise);
+            dailyData[dateId].temperature.push(point.temperature);
+            dailyData[dateId].humidity.push(point.humidity);
+            dailyData[dateId].pressure.push(point.pressure);
+            dailyData[dateId].gas.push(point.gas);
+            dailyData[dateId].mvc.push(point.mvc);
+            dailyData[dateId].nmvc.push(point.nmvc);
+            dailyData[dateId].pc.push(point.pc);
+            dailyData[dateId].sp.push(point.sp);
+            dailyData[dateId].tp.push(point.tp);
           }
         });
         pathsData.push(path);
@@ -136,7 +195,7 @@ async function displayAllUserRecords() {
   }
 
   initializeMap(dataPoints, pathsData);
-  createTimelineChart(records, hourlyData, "temperature");
+  createTimelineChart(records, hourlyData, dailyData, "temperature", "recordCount");
 }
 
 displayAllUserRecords().catch((error) => {
@@ -148,8 +207,10 @@ function initializeMap(dataPoints, paths) {
   map = new mapboxgl.Map({
     container: "map",
     style: "mapbox://styles/tianmingliu/clypw698q009p01qr4vwf5c17",
-    center: [0.024331, 51.515015],
-    zoom: 16,
+    center: [-0.13023371552561286, 51.51668299289028],
+    zoom: 15,
+    minZoom: 14.75,
+    maxZoom: 17,
   });
 
   scatterplotLayer = new deck.ScatterplotLayer({
@@ -314,13 +375,20 @@ function animateSinglePath(path, allPaths) {
   animationFrameId = requestAnimationFrame(updateSinglePath);
 }
 
-document.getElementById("dataControl").addEventListener("change", (event) => {
-  const dataType = event.target.value;
-  console.log("Data type control changed:", dataType);
+document.getElementById("displayMode").addEventListener("change", (event) => {
+  selectedDisplayMode = event.target.value;
+  console.log("Display mode changed:", displayMode);
 
-  // 更新地图上的点
+  d3.select("#timeline").html("");
+  createTimelineChart(records, hourlyData, dailyData, selectedDataType, selectedDisplayMode);
+});
+
+document.getElementById("dataControl").addEventListener("change", (event) => {
+  selectedDataType = event.target.value;
+  console.log("Data type control changed:", selectedDataType);
+
   dataPoints.forEach((point) => {
-    point.color = getColorByValue(point[dataType], dataType);
+    point.color = getColorByValue(point[selectedDataType], selectedDataType);
   });
 
   overlay.setProps({
@@ -358,78 +426,59 @@ document.getElementById("dataControl").addEventListener("change", (event) => {
   });
 
   map.addControl(overlay);
-  console.log("Color control updated:", dataType);
+  console.log("Color control updated:", selectedDataType);
 
   d3.select("#timeline").html("");
-  createTimelineChart(records, hourlyData, dataType);
+  createTimelineChart(records, hourlyData, dailyData, selectedDataType,selectedDisplayMode);
 });
 
-function createTimelineChart(records, hourlyData, dataType) {
+function createTimelineChart(records, hourlyData, dailyData, dataType,displayMode) {
   const timelineDiv = d3.select("#timeline");
-  console.log("Creating timeline chart for data type:", dataType);
-  const circleOffset = 20; // Distance above the rectangles to place the circles
   const margin = {
-    top: 20 + circleOffset + 20,
+    top: 50,
     right: 20,
-    bottom: 30 + 20,
+    bottom: 20,
     left: 100,
-  }; // Increased left margin for legend
-  const timelineHeight = document.getElementById("timeline").offsetHeight;
-  const width =
-    document.getElementById("timeline").offsetWidth -
-    margin.left -
-    margin.right;
-  const height = timelineHeight - margin.top - margin.bottom;
+  };
+  const totalWidth = document.getElementById("timeline").offsetWidth;
+  console.log("totalWidth", totalWidth);
+  console.log("margin", margin.left, margin.right);
+  const width = (totalWidth - margin.left - margin.right) / 2;
+  console.log("width", width);
+
+  const unitSize = ((totalWidth - margin.left - margin.right) / 49) * 0.55;
+  const cellSize = unitSize * 0.6; // Size of each cell
+  const cellPadding = (unitSize - cellSize) / 2; // Padding between cells
+  const height = unitSize * 7;
 
   const svg = timelineDiv
     .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
+    .attr("width", totalWidth)
+    .attr("height", height + margin.bottom)
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
   const x = d3.scaleLinear().domain([0, 24]).range([0, width]);
 
-  const y = d3
-    .scaleBand()
-    .domain(d3.range(records.length))
-    .range([0, height])
-    .padding(0.05);
+  let recordCounts = [];
+  if (displayMode === "recordCount") {
+    recordCounts = d3.range(24).map((hour) => {
+      return records.filter((record) => record.startTime.getHours() === hour).length;
+    });
+  } else if (displayMode === "averageValue") {
+    recordCounts = d3.range(24).map((hour) => {
+      const values = hourlyData[hour] && hourlyData[hour][dataType] ? hourlyData[hour][dataType] : [];
+      return values.length ? d3.mean(values) : null;
+    });
+  }
 
-  // Add bottom x axis with additional offset
-  svg
-    .append("g")
-    .attr("transform", `translate(0,${height + 20})`)
-    .call(d3.axisBottom(x).ticks(24))
-    .selectAll("text")
-    .style("fill", "white")
-    .style("font-size", "10px");
-
-  // Add top x axis
-  svg
-    .append("g")
-    .attr("transform", `translate(0, -20)`)
-    .call(d3.axisTop(x).ticks(24))
-    .selectAll("text")
-    .style("fill", "white")
-    .style("font-size", "10px");
-
-  svg.selectAll(".domain, .tick line").style("stroke", "lightgrey");
-
-  // Calculate the record count for each hour using start time's hour
-  const recordCounts = d3.range(24).map((hour) => {
-    const count = records.filter((record) => {
-      return record.startTime.getHours() === hour;
-    }).length;
-    return count;
-  });
-
-  const colorScale = d3
-    .scaleSequential()
-    .domain([0, d3.max(recordCounts)])
-    .interpolator(
-      d3.interpolateRgb("rgba(73, 50, 64,1)", "rgba(255, 0, 153,1)")
-    );
+  const colorScale = displayMode === "recordCount" 
+    ? d3.scaleSequential()
+        .domain([0, d3.max(recordCounts)])
+        .interpolator(
+          d3.interpolateRgb("rgba(20, 20, 20,0.5)", "rgba(220, 220, 220,0.5)")
+        )
+    : gradientScales[dataType];
 
   const durationExtent = d3.extent(records, (record) => {
     const startTime =
@@ -441,36 +490,75 @@ function createTimelineChart(records, hourlyData, dataType) {
 
   const radiusScale = d3.scaleSqrt().domain(durationExtent).range([5, 15]);
 
+  const hourGroup = svg.append("g").attr("transform", `translate(0, -20)`);
   // Add rectangles for each hour of the day, colored by the number of records
   // Add outer rectangles for the black border effect
-  svg
+  hourGroup
     .selectAll("outerRect")
     .data(recordCounts)
     .enter()
     .append("rect")
-    .attr("x", (d, i) => x(i))
+    .attr("x", (d, i) => x(i) + width)
     .attr("y", 0)
     .attr("width", width / 24)
-    .attr("height", height)
+    .attr("height", height * 0.8)
     .attr("fill", "none")
     .attr("stroke", "black")
     .attr("stroke-width", 2);
 
   // Add inner rectangles for the colored fill
-  svg
+  hourGroup
     .selectAll("innerRect")
     .data(recordCounts)
     .enter()
     .append("rect")
-    .attr("x", (d, i) => x(i) + 1)
-    .attr("y", 1)
-    .attr("width", width / 24 - 3)
-    .attr("height", height - 3)
+    .attr("x", (d, i) => x(i) + width)
+    .attr("y", 0)
+    .attr("width", width / 24 - 5)
+    .attr("height", height * 0.8)
+    .attr("fill",(d) => (d === null ? "black" : colorScale(d)))
     .attr("stroke", "white")
-    .attr("stroke-width", 0.15)
-    .attr("fill", (d) => colorScale(d))
+    .attr("stroke-width", 0.5)
     .attr("rx", 5)
     .attr("ry", 5);
+
+  // Add text labels for each hour
+  hourGroup
+    .selectAll("hourLabel")
+    .data(d3.range(24))
+    .enter()
+    .append("text")
+    .attr("class", "hourLabel")
+    .attr("x", (d) => x(d) + width + width / 96)
+    .attr("y", -10)
+    .style("fill", "white")
+    .style("font-size", "8px")
+    .text((d) => d);
+
+  // add anotation for the time distribution
+  const hourAnnotation = hourGroup
+    .append("g")
+    .attr("class", "annotation")
+    .attr("transform", `translate(0, 0)`);
+  hourAnnotation
+    .append("text")
+    .attr("x", width * 1.5)
+    .attr("y", height*0.9)
+    .style("fill", "lightgrey")
+    .style("font-size", "10px")
+    .text("Daily Distribution");
+
+  // Add Base line for the circle chart
+  const baseLine = svg
+    .append("line")
+    .attr("x1", width)
+    .attr("x2", width*2)
+    .attr("y1", height/4)
+    .attr("y2", height/4)
+    .attr("stroke", "lightgrey")
+    .attr("stroke-width", 0.5);
+
+  const circleGroup = svg.append("g").attr("transform", `translate(0, 0)`);
 
   records.forEach((record, index) => {
     const startTime =
@@ -482,106 +570,200 @@ function createTimelineChart(records, hourlyData, dataType) {
 
     const startX = x(startTime);
     const endX = x(endTime);
-    const cxValue = (startX + endX) / 2;
+    const cxValue = (startX + endX) / 2 + width;
 
-    // Adjust the cyValue to a fixed height above the rectangles
-    const cyValue = -circleOffset / 2;
-
-    svg
+    circleGroup
       .append("circle")
       .attr("cx", isNaN(cxValue) ? 0 : cxValue)
-      .attr("cy", cyValue)
+      .attr("cy", height / 4)
       .attr("r", radius)
       .attr("fill", "rgba(255, 255, 255, 0.75)")
       .attr("stroke", "black")
       .attr("stroke-width", 0.2);
   });
 
-  // Add legend
-  const legendData = [
-    { type: "temperature", color: "red" },
-    { type: "humidity", color: "blue" },
-    { type: "pressure", color: "green" },
-    { type: "gas", color: "orange" },
-    { type: "noise", color: "purple" },
-    { type: "mvc", color: "brown" },
-    { type: "nmvc", color: "pink" },
-    { type: "pc", color: "cyan" },
-    { type: "sp", color: "yellow" },
-    { type: "tp", color: "grey" },
-  ];
+  // Create an array of all days in the year
+  const allDays = d3.timeDays(
+    new Date(new Date().getFullYear(), 0, 1),
+    new Date(new Date().getFullYear() + 1, 0, 1)
+  );
 
+  let dailyCounts = [];
+  if (displayMode === "recordCount") {
+    dailyCounts = allDays.map((day) => {
+      const dayStr = `${day.getMonth() + 1}-${day.getDate()}`;
+      const count = records.filter((record) => {
+        const recordDate = d3.timeDay(record.startTime);
+        return recordDate.getTime() === day.getTime();
+      }).length;
+      return { date: day, count: count };
+    });
+  } else if (displayMode === "averageValue") {
+    dailyCounts = allDays.map((day) => {
+      const dayStr = `${day.getMonth() + 1}-${day.getDate()}`;
+      const values = dailyData[dayStr] && dailyData[dayStr][dataType] ? dailyData[dayStr][dataType] : [];
+      return {
+        date: day,
+        count: values.length ? d3.mean(values) : null,
+      };
+    });
+  }
+
+  console.log("dailyCounts", dailyCounts);
+  console.log("dailyData", dailyData);
+
+  const dateExtent = d3.extent(dailyCounts, (d) => d.date);
+  const firstDay = d3.timeMonday(dateExtent[0]);
+  const lastDay = d3.timeSunday(dateExtent[1]);
+
+  const dateColorScale = displayMode === "recordCount"
+  ? d3.scaleSequential()
+      .domain([0, d3.max(dailyCounts, (d) => d.count)])
+      .interpolator(
+        d3.interpolateRgb("rgba(20, 20, 20,1)", "rgba(220, 220, 220,1)")
+      )
+  : gradientScales[dataType];
+
+  const dateGroup = svg.append("g").attr("transform", `translate(15, -20)`);
+
+  // Add day labels
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  dateGroup
+    .selectAll(".dayLabel")
+    .data(days)
+    .enter()
+    .append("text")
+    .attr("class", "dayLabel")
+    .attr("x", -10)
+    .attr("y", (d, i) => i * (cellSize + cellPadding) + 5)
+    .style("text-anchor", "end")
+    .attr("dy", "0.32em")
+    .style("fill", "white")
+    .style("font-size", "8px")
+    .text((d) => d);
+
+  // Add month labels
+  const months = d3.timeMonth.range(firstDay, lastDay);
+  dateGroup
+    .selectAll(".monthLabel")
+    .data(months)
+    .enter()
+    .append("text")
+    .attr("class", "monthLabel")
+    .attr("x", (d) => {
+      const weekOffset = d3.timeWeek.count(firstDay, d);
+      return weekOffset * (cellSize + cellPadding);
+    })
+    .attr("y", -10)
+    .style("text-anchor", "start")
+    .style("fill", "white")
+    .style("font-size", "8px")
+    .text((d) => d3.timeFormat("%b")(d));
+
+  dateGroup
+    .selectAll(".dayCell")
+    .data(dailyCounts)
+    .enter()
+    .append("rect")
+    .attr("class", "dayCell")
+    .attr("x", (d) => {
+      const weekOffset = d3.timeWeek.count(firstDay, d.date);
+      return weekOffset * (cellSize + cellPadding);
+    })
+    .attr("y", (d) => d.date.getDay() * (cellSize + cellPadding))
+    .attr("width", cellSize)
+    .attr("height", cellSize)
+    .attr("fill", (d) => dateColorScale(d.count))
+    .attr("stroke", "lightgrey")
+    .attr("stroke-width", 0.3);
+
+  // add anotation for the date distribution
+  const annotation = dateGroup
+    .append("g")
+    .attr("class", "annotation")
+    .attr("transform", `translate(-${margin.left}, 0)`);
+  annotation
+    .append("text")
+    .attr("x", (49 * (cellSize + cellPadding)) / 2)
+    .attr("y", height*0.9)
+    .style("fill", "lightgrey")
+    .style("font-size", "10px")
+    .text("Annual Distribution");
+
+  // Add a legend for the date distribution
   const legend = svg
     .append("g")
     .attr("class", "legend")
     .attr("transform", `translate(-${margin.left}, 0)`);
 
-  legendData.forEach((d, i) => {
-    legend
-      .append("rect")
-      .attr("x", 0)
-      .attr("y", i * 20)
-      .attr("width", 18)
-      .attr("height", 18)
-      .style("fill", d.color);
-
-    legend
-      .append("text")
-      .attr("x", 24)
-      .attr("y", i * 20 + 9)
-      .attr("dy", ".35em")
-      .style("fill", "white")
-      .text(d.type);
-  });
-
-  const dataTypeRanges = {
-    temperature: [0, 40],
-    humidity: [0, 100],
-    pressure: [950, 1050],
-    gas: [0, 500],
-    noise: [0, 100],
-    mvc: [0, 10],
-    nmvc: [0, 10],
-    pc: [0, 100],
-    sp: [0, 100],
-    tp: [0, 100],
+  const legendNames = {
+    temperature: "Temperature (°C)",
+    humidity: "Humidity (%)",
+    pressure: "Pressure (hPa)",
+    gas: "Gas (kOhms)",
+    noise: "Noise Level (dB)",
+    mvc: "Count (MV)",
+    nmvc: "Count (NMVC)",
+    pc: "People Count",
+    sp: "Sky Visibility (%)",
+    tp: "Tree Visibility (%)",
   };
 
-  Object.keys(hourlyData).forEach((hour) => {
-    const data = hourlyData[hour][dataType];
-    if (data && data.length > 0) {
-      const range = dataTypeRanges[dataType] || [d3.min(data), d3.max(data)];
-      const histogram = d3.histogram().domain(range).thresholds(10)(data);
+  const updateLegend = (dataType, legend) => {
+    legend.selectAll("*").remove();
 
-      const xScale = d3
-        .scaleLinear()
-        .domain([0, d3.max(histogram, (d) => d.length)])
-        .range([1, width / 24 - 3]);
-
-      const barHeight = (height - 3) / histogram.length - 1;
-
-      const extendedHistogram = [
-        { x0: range[0], length: 0 }, // Set y value to 0 for the starting point
-        ...histogram,
-        { x0: range[1], length: 0 }, // Set y value to 0 for the ending point
-      ];
-
-      const line = d3
-        .line()
-        .x((d) => xScale(d.length))
-        .y((d, i) => i * barHeight + barHeight / 2)
-        .curve(d3.curveBasis);
-
-      svg
-        .append("path")
-        .datum(extendedHistogram)
-        .attr("fill", "none")
-        .attr("stroke", "white")
-        .attr("stroke-width", 1)
-        .attr("transform", `translate(${x(hour) + 1}, 0)`)
-        .attr("d", line);
+    const gradientScale = gradientScales[dataType];
+    const dataDomain = gradientScale.domain();
+    const endValue = dataDomain[1];
+    if (!gradientScale) {
+      console.error(`Gradient scale for data type "${dataType}" not found.`);
+      return;
     }
-  });
 
-  console.log("Timeline chart created for data type:", dataType);
+    const formatColor = (color) => {
+      const rgb = d3.rgb(color);
+      return `rgb(${rgb.r},${rgb.g},${rgb.b})`;
+    };
+
+    const startColor = formatColor(gradientScale(0));
+    const endColor = formatColor(gradientScale(endValue));
+    const colors = [startColor, endColor];
+    const gradientId = `gradient-${dataType}`;
+
+    const defs = legend.append("defs");
+    const linearGradient = defs
+      .append("linearGradient")
+      .attr("id", gradientId)
+      .attr("x1", "0%")
+      .attr("x2", "0%")
+      .attr("y1", "0%")
+      .attr("y2", "100%");
+
+    linearGradient
+      .selectAll("stop")
+      .data(colors)
+      .enter()
+      .append("stop")
+      .attr("offset", (d, i) => `${100 * (i / (colors.length - 1))}%`)
+      .attr("stop-color", (d) => d);
+
+    const rect = legend
+      .append("rect")
+      .attr("x", 20)
+      .attr("y", -25)
+      .attr("width", 15)
+      .attr("height", height * 0.8)
+      .style("fill", `url(#${gradientId})`);
+
+    const text = legend
+      .append("text")
+      .attr("x", 55)
+      .attr("y", height / 2)
+      .style("fill", "lightgrey")
+      .style("font-size", "12px")
+      .text(legendNames[dataType])
+      .attr("transform", `rotate(-90, 55, ${height / 2})`);
+  };
+
+  updateLegend(dataType, legend);
 }

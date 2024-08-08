@@ -23,31 +23,32 @@
     .logo_area {
       background: #000000;
       color: #ffffff;
-      padding-top: 20px;
-      padding-bottom: 20px;
+      padding: 20px;
       border-bottom: 0.5px solid #5b5b5b;
       display: flex;
       align-items: center;
       width: 90%;
       margin: 0 auto;
+      flex-wrap: wrap;
+      text-align: left;
     }
 
     .logo_area img {
       margin-right: 10px;
-      width: 70px;
+      width: 50px;
       border-radius: 10px;
+      /* ADD IMG SHADOW */
+      box-shadow: 0 0 10px rgba(80, 8, 120, 1);
     }
 
     .logo_area h1 {
       margin: 0;
-      margin-left: 20px;
-      font-size: 60px;
-      flex-grow: 1;
+      font-size: 32px;
     }
 
     .logo_area h2 {
       margin: 0;
-      font-size: 24px;
+      font-size: 18px;
       font-weight: 200;
     }
 
@@ -56,39 +57,40 @@
       margin: 0 auto;
       background-color: rgb(0, 0, 0);
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      padding-top: 30px;
+      padding-top: 20px;
     }
     .title_section {
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 20px;
     }
     .title_section .main_title {
-      font-size: 36px;
+      font-size: 28px;
       color: #500778;
     }
     .title_section .sub_title {
-      font-size: 18px;
+      font-size: 16px;
       color: #555;
     }
     .section {
-      margin-bottom: 40px;
+      margin-bottom: 20px;
     }
     .section h2 {
       color: #ffffff;
       padding-bottom: 10px;
       margin-bottom: 20px;
+      font-size: 24px;
     }
     .section p,
     .section ul {
       line-height: 1.6;
-      font-size: 18px;
+      font-size: 16px;
       color: #d6d6d6;
       font-weight: 200;
     }
 
     .section p span {
       font-weight: bold;
-      font-size: 20px;
+      font-size: 18px;
     }
     .section ul {
       list-style-type: disc;
@@ -97,9 +99,9 @@
     .map-container {
       position: relative;
       width: 100%;
-      height: 400px;
+      height: 300px;
       background: url("map-background.jpg") no-repeat center center/cover;
-      margin-bottom: 40px;
+      margin-bottom: 20px;
       border: #5e5e5e;
       border-style: solid;
       border-width: 0.1px;
@@ -110,8 +112,8 @@
       left: 50%;
       transform: translate(-50%, -50%);
       background: white;
-      padding: 15px 30px;
-      border-radius: 30px;
+      padding: 10px 20px;
+      border-radius: 20px;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
       transition: background 0.3s ease, color 0.3s ease;
     }
@@ -119,7 +121,7 @@
       color: #000000;
       text-decoration: none;
       font-weight: bold;
-      font-size: 18px;
+      font-size: 16px;
     }
     .launch-button:hover {
       background: #000000;
@@ -129,15 +131,30 @@
       color: white;
     }
     .contact-section {
-      margin-top: 40px;
+      margin-top: 20px;
+    }
+    .button {
+      display: inline-block;
+      padding: 10px 15px;
+      margin-top: 10px;
+      color: #fff;
+      background-color: #500778;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background 0.3s ease;
+    }
+    .button:hover {
+      background-color: #333;
     }
   </style>
 </head>
 <body>
   <div class="logo_area">
     <img src="./src/logo.png" alt="GeoScanner Logo" />
-    <h1>GeoScanner</h1>
-    <h2>A Portable Mobile Sensing Platform</h2>
+    <div class="text-container">
+      <h1>GeoScanner</h1>
+      <h2>A Portable Mobile Sensing Solution</h2>
+    </div>
   </div>
 
   <div class="container">
