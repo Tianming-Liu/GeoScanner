@@ -19,7 +19,7 @@ let selectedDisplayMode = "recordCount";
 
 const gradientScales = {
   temperature: d3
-    .scaleSequential(d3.interpolateRgb("blue", "red"))
+    .scaleSequential(d3.interpolateRgb("dodgerblue", "crimson"))
     .domain([0, 40]),
   humidity: d3
     .scaleSequential(d3.interpolateRgb("lightblue", "darkblue"))
@@ -28,7 +28,7 @@ const gradientScales = {
     .scaleSequential(d3.interpolateRgb("lightgreen", "darkgreen"))
     .domain([950, 1050]),
   gas: d3
-    .scaleSequential(d3.interpolateRgb("yellow", "brown"))
+    .scaleSequential(d3.interpolateRgb("brown", "yellow"))
     .domain([0, 500]),
   noise: d3
     .scaleSequential(d3.interpolateRgb("purple", "orange"))
@@ -37,7 +37,7 @@ const gradientScales = {
     .scaleSequential(d3.interpolateRgb("lightgray", "black"))
     .domain([0, 10]),
   nmvc: d3.scaleSequential(d3.interpolateRgb("pink", "purple")).domain([0, 10]),
-  pc: d3.scaleSequential(d3.interpolateRgb("cyan", "blue")).domain([0, 100]),
+  pc: d3.scaleSequential(d3.interpolateRgb("cyan", "blue")).domain([0, 50]),
   sp: d3.scaleSequential(d3.interpolateRgb("white", "red")).domain([0, 100]),
   tp: d3.scaleSequential(d3.interpolateRgb("lime", "green")).domain([0, 100]),
 };
@@ -195,7 +195,13 @@ async function displayAllUserRecords() {
   }
 
   initializeMap(dataPoints, pathsData);
-  createTimelineChart(records, hourlyData, dailyData, "temperature", "recordCount");
+  createTimelineChart(
+    records,
+    hourlyData,
+    dailyData,
+    "temperature",
+    "recordCount"
+  );
 }
 
 displayAllUserRecords().catch((error) => {
@@ -380,7 +386,13 @@ document.getElementById("displayMode").addEventListener("change", (event) => {
   console.log("Display mode changed:", displayMode);
 
   d3.select("#timeline").html("");
-  createTimelineChart(records, hourlyData, dailyData, selectedDataType, selectedDisplayMode);
+  createTimelineChart(
+    records,
+    hourlyData,
+    dailyData,
+    selectedDataType,
+    selectedDisplayMode
+  );
 });
 
 document.getElementById("dataControl").addEventListener("change", (event) => {
@@ -429,10 +441,22 @@ document.getElementById("dataControl").addEventListener("change", (event) => {
   console.log("Color control updated:", selectedDataType);
 
   d3.select("#timeline").html("");
-  createTimelineChart(records, hourlyData, dailyData, selectedDataType,selectedDisplayMode);
+  createTimelineChart(
+    records,
+    hourlyData,
+    dailyData,
+    selectedDataType,
+    selectedDisplayMode
+  );
 });
 
-function createTimelineChart(records, hourlyData, dailyData, dataType,displayMode) {
+function createTimelineChart(
+  records,
+  hourlyData,
+  dailyData,
+  dataType,
+  displayMode
+) {
   const timelineDiv = d3.select("#timeline");
   const margin = {
     top: 50,
@@ -463,22 +487,28 @@ function createTimelineChart(records, hourlyData, dailyData, dataType,displayMod
   let recordCounts = [];
   if (displayMode === "recordCount") {
     recordCounts = d3.range(24).map((hour) => {
-      return records.filter((record) => record.startTime.getHours() === hour).length;
+      return records.filter((record) => record.startTime.getHours() === hour)
+        .length;
     });
   } else if (displayMode === "averageValue") {
     recordCounts = d3.range(24).map((hour) => {
-      const values = hourlyData[hour] && hourlyData[hour][dataType] ? hourlyData[hour][dataType] : [];
+      const values =
+        hourlyData[hour] && hourlyData[hour][dataType]
+          ? hourlyData[hour][dataType]
+          : [];
       return values.length ? d3.mean(values) : null;
     });
   }
 
-  const colorScale = displayMode === "recordCount" 
-    ? d3.scaleSequential()
-        .domain([0, d3.max(recordCounts)])
-        .interpolator(
-          d3.interpolateRgb("rgba(20, 20, 20,0.5)", "rgba(220, 220, 220,0.5)")
-        )
-    : gradientScales[dataType];
+  const colorScale =
+    displayMode === "recordCount"
+      ? d3
+          .scaleSequential()
+          .domain([0, d3.max(recordCounts)])
+          .interpolator(
+            d3.interpolateRgb("rgba(20, 20, 20,0.5)", "rgba(220, 220, 220,0.5)")
+          )
+      : gradientScales[dataType];
 
   const durationExtent = d3.extent(records, (record) => {
     const startTime =
@@ -516,7 +546,7 @@ function createTimelineChart(records, hourlyData, dailyData, dataType,displayMod
     .attr("y", 0)
     .attr("width", width / 24 - 5)
     .attr("height", height * 0.8)
-    .attr("fill",(d) => (d === null ? "black" : colorScale(d)))
+    .attr("fill", (d) => (d === null ? "black" : colorScale(d)))
     .attr("stroke", "white")
     .attr("stroke-width", 0.5)
     .attr("rx", 5)
@@ -543,7 +573,7 @@ function createTimelineChart(records, hourlyData, dailyData, dataType,displayMod
   hourAnnotation
     .append("text")
     .attr("x", width * 1.5)
-    .attr("y", height*0.9)
+    .attr("y", height * 0.9)
     .style("fill", "lightgrey")
     .style("font-size", "10px")
     .text("Daily Distribution");
@@ -552,9 +582,9 @@ function createTimelineChart(records, hourlyData, dailyData, dataType,displayMod
   const baseLine = svg
     .append("line")
     .attr("x1", width)
-    .attr("x2", width*2)
-    .attr("y1", height/4)
-    .attr("y2", height/4)
+    .attr("x2", width * 2)
+    .attr("y1", height / 4)
+    .attr("y2", height / 4)
     .attr("stroke", "lightgrey")
     .attr("stroke-width", 0.5);
 
@@ -601,7 +631,10 @@ function createTimelineChart(records, hourlyData, dailyData, dataType,displayMod
   } else if (displayMode === "averageValue") {
     dailyCounts = allDays.map((day) => {
       const dayStr = `${day.getMonth() + 1}-${day.getDate()}`;
-      const values = dailyData[dayStr] && dailyData[dayStr][dataType] ? dailyData[dayStr][dataType] : [];
+      const values =
+        dailyData[dayStr] && dailyData[dayStr][dataType]
+          ? dailyData[dayStr][dataType]
+          : [];
       return {
         date: day,
         count: values.length ? d3.mean(values) : null,
@@ -616,15 +649,17 @@ function createTimelineChart(records, hourlyData, dailyData, dataType,displayMod
   const firstDay = d3.timeMonday(dateExtent[0]);
   const lastDay = d3.timeSunday(dateExtent[1]);
 
-  const dateColorScale = displayMode === "recordCount"
-  ? d3.scaleSequential()
-      .domain([0, d3.max(dailyCounts, (d) => d.count)])
-      .interpolator(
-        d3.interpolateRgb("rgba(20, 20, 20,1)", "rgba(220, 220, 220,1)")
-      )
-  : gradientScales[dataType];
+  const dateColorScale =
+    displayMode === "recordCount"
+      ? d3
+          .scaleSequential()
+          .domain([0, d3.max(dailyCounts, (d) => d.count)])
+          .interpolator(
+            d3.interpolateRgb("rgba(20, 20, 20,1)", "rgba(220, 220, 220,1)")
+          )
+      : gradientScales[dataType];
 
-  const dateGroup = svg.append("g").attr("transform", `translate(15, -20)`);
+  const dateGroup = svg.append("g").attr("transform", `translate(25, -20)`);
 
   // Add day labels
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -634,9 +669,9 @@ function createTimelineChart(records, hourlyData, dailyData, dataType,displayMod
     .enter()
     .append("text")
     .attr("class", "dayLabel")
-    .attr("x", -10)
+    .attr("x", -25)
     .attr("y", (d, i) => i * (cellSize + cellPadding) + 5)
-    .style("text-anchor", "end")
+    .style("text-anchor", "start")
     .attr("dy", "0.32em")
     .style("fill", "white")
     .style("font-size", "8px")
@@ -685,7 +720,7 @@ function createTimelineChart(records, hourlyData, dailyData, dataType,displayMod
   annotation
     .append("text")
     .attr("x", (49 * (cellSize + cellPadding)) / 2)
-    .attr("y", height*0.9)
+    .attr("y", height * 0.9)
     .style("fill", "lightgrey")
     .style("font-size", "10px")
     .text("Annual Distribution");
@@ -747,22 +782,48 @@ function createTimelineChart(records, hourlyData, dailyData, dataType,displayMod
       .attr("offset", (d, i) => `${100 * (i / (colors.length - 1))}%`)
       .attr("stop-color", (d) => d);
 
+    const legendHeight = height * 0.8;
+
+    const legendYStart = -25;
+
     const rect = legend
       .append("rect")
-      .attr("x", 20)
-      .attr("y", -25)
+      .attr("x", 30)
+      .attr("y", legendYStart)
       .attr("width", 15)
-      .attr("height", height * 0.8)
+      .attr("height", legendHeight)
       .style("fill", `url(#${gradientId})`);
+    
+    const numTicks = 5;
+    const tickValues = d3.range(numTicks).map((d) => {
+      return (endValue / (numTicks - 1)) * d;
+    });
+
+    const tickScale = d3
+      .scaleLinear()
+      .domain([0, endValue])
+      .range([legendHeight, 0]);
+
+    legend
+      .selectAll(".tick")
+      .data(tickValues)
+      .enter()
+      .append("text")
+      .attr("class", "tick")
+      .attr("x", 50)
+      .attr("y", (d) => legendYStart + tickScale(d))
+      .style("fill", "white")
+      .style("font-size", "8px")
+      .text((d) => d3.format(".2f")(d));
 
     const text = legend
       .append("text")
-      .attr("x", 55)
+      .attr("x", 20)
       .attr("y", height / 2)
-      .style("fill", "lightgrey")
-      .style("font-size", "12px")
+      .style("fill", "white")
+      .style("font-size", "10px")
       .text(legendNames[dataType])
-      .attr("transform", `rotate(-90, 55, ${height / 2})`);
+      .attr("transform", `rotate(-90, 20, ${height / 2})`);
   };
 
   updateLegend(dataType, legend);
