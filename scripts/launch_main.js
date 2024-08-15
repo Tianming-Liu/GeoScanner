@@ -793,7 +793,7 @@ function createTimelineChart(
       .attr("width", 15)
       .attr("height", legendHeight)
       .style("fill", `url(#${gradientId})`);
-    
+
     const numTicks = 5;
     const tickValues = d3.range(numTicks).map((d) => {
       return (endValue / (numTicks - 1)) * d;
