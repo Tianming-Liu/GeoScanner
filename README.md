@@ -1,6 +1,16 @@
 # GeoScanner: Your Complete Mobile Sensing Solution
 
-**GeoScanner** is an all-in-one mobile sensing platform designed to empower individuals and organizations to monitor and analyze environmental conditions with precision and ease. From hardware setup to data visualization, GeoScanner provides a seamless experience, offering everything you need to get started with mobile environmental sensing.
+**GeoScanner** is an all-in-one mobile sensing platform designed to empower individuals and organizations to monitor and analyze environmental conditions with precision and ease. 
+
+<div align=center>
+  <img src="./project_website/src/app_development.png" alt="Overall Photo of Website and Plant Monitor" width="500">
+</div>
+
+From hardware setup to data visualization, GeoScanner provides a seamless experience, offering everything you need to get started with mobile environmental sensing.
+
+<div align=center>
+  <img src="./project_website/src/hardware_design.png" alt="Overall Photo of Website and Plant Monitor" width="500">
+</div>
 
 ## 🌐 Explore GeoScanner
 
