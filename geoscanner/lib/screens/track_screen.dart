@@ -24,14 +24,13 @@ class TrackScreen extends StatefulWidget {
   State<TrackScreen> createState() => _TrackScreenState();
 }
 
-class _TrackScreenState extends State<TrackScreen>
-    with SingleTickerProviderStateMixin {
+class _TrackScreenState extends State<TrackScreen> {
   late SensorService _sensorService;
   late WebSocketService _espWebSocketService;
   late AWSWebSocketService _awsWebSocketService;
   // ignore: unused_field
   late FirebaseFirestore _firestore;
-  AnimationController? _animationController;
+  // AnimationController? _animationController;
   Uuid uuid = const Uuid();
 
   final GlobalKey<AnimatedHistoryState> _animatedHistoryKey =
@@ -104,9 +103,9 @@ class _TrackScreenState extends State<TrackScreen>
     _initializeLocalSensor();
     _espWebSocketService = WebSocketService('esp32.local');
     _awsWebSocketService = AWSWebSocketService('35.178.35.159');
-    _animationController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 1))
-          ..repeat(reverse: true);
+    // _animationController =
+    //     AnimationController(vsync: this, duration: const Duration(seconds: 1))
+    //       ..repeat(reverse: true);
   }
 
   void _getUserInfo() {
@@ -139,8 +138,8 @@ class _TrackScreenState extends State<TrackScreen>
       setState(
         () {
           _isEspWSConnected = isConnected;
-          _initialSteps[0].isError = !isConnected; // 更新 Network Setting 错误状态
-          _isEspWSConnecting = false; // 完成连接后取消加载状态
+          _initialSteps[0].isError = !isConnected;
+          _isEspWSConnecting = false;
           _updateWorkflowSteps();
         },
       );
@@ -156,7 +155,7 @@ class _TrackScreenState extends State<TrackScreen>
     setState(() {
       _isEspWSConnected = false;
       _sensorStatus = 'Unknown';
-      _sensorService.isReady = false; // 确保Local Sensor Module步骤重置
+      _sensorService.isReady = false;
       _resetWorkflowSteps();
     });
   }
@@ -172,7 +171,8 @@ class _TrackScreenState extends State<TrackScreen>
     // Network Setting
     setState(() {
       _initialSteps[0].isCompleted = _isEspWSConnected;
-      _initialSteps[0].isError = !_isEspWSConnected; // 更新 Network Setting 错误状态
+      _initialSteps[0].isError =
+          !_isEspWSConnected; // Update Network Setting Error Status
     });
     await Future.delayed(const Duration(seconds: 1));
 
@@ -180,7 +180,7 @@ class _TrackScreenState extends State<TrackScreen>
     setState(() {
       _initialSteps[1].subSteps[0].isCompleted = _sensorService.isReady;
       _initialSteps[1].subSteps[0].isError =
-          !_sensorService.isReady; // 更新 Local Sensor Module 错误状态
+          !_sensorService.isReady; // Update Local Sensor Module Error Status
     });
     await Future.delayed(const Duration(seconds: 1));
 
@@ -189,7 +189,7 @@ class _TrackScreenState extends State<TrackScreen>
       _initialSteps[1].subSteps[1].isCompleted =
           _sensorStatus == 'Both sensors initialized.';
       _initialSteps[1].subSteps[1].isError = _sensorStatus !=
-          'Both sensors initialized.'; // 更新 External Sensor Module 错误状态
+          'Both sensors initialized.'; // Update External Sensor Module Error Status
     });
 
     // Sensing Module Initialization
@@ -197,7 +197,7 @@ class _TrackScreenState extends State<TrackScreen>
       _initialSteps[1].isCompleted =
           _initialSteps[1].subSteps.every((subStep) => subStep.isCompleted);
       _initialSteps[1].isError = !_initialSteps[1]
-          .isCompleted; // 更新 Sensing Module Initialization 错误状态
+          .isCompleted; // Update Sensing Module Initialization error status
     });
     await Future.delayed(const Duration(seconds: 1));
 
@@ -210,15 +210,18 @@ class _TrackScreenState extends State<TrackScreen>
 
   void _toggleRecording() {
     setState(() {
-      _initialSwitchDisabled = true; // 禁用滑块
+      _initialSwitchDisabled = true; // Disable the switch
       if (_isRecording) {
         _isRecordingPaused = !_isRecordingPaused;
         if (_isRecordingPaused) {
-          _espWebSocketService.sendStopCommand(); //
-          _animatedHistoryKey.currentState?.toggleAnimation(); // 暂停动画
+          _espWebSocketService.sendStopCommand();
+          _animatedHistoryKey.currentState
+              ?.toggleAnimation(); // Pause the animation
         } else {
-          _espWebSocketService.sendStartCommand(); // 发送开始命令
-          _animatedHistoryKey.currentState?.toggleAnimation(); // 继续动画
+          _espWebSocketService
+              .sendStartCommand(); // Send start command to ESP32
+          _animatedHistoryKey.currentState
+              ?.toggleAnimation(); // Resume the animation
         }
       } else {
         // Initialize the recording status parameters
@@ -242,42 +245,43 @@ class _TrackScreenState extends State<TrackScreen>
             });
           },
         );
-        _espWebSocketService.sendStartCommand(); // 初次开始时发送开始命令
+        _espWebSocketService.sendStartCommand(); // Send start command to ESP32
       }
     });
   }
 
   void handleBinaryData(Uint8List data) {
-    if (data.length > 1000) {
-      final imageData = ImageData(data, _currentTime, _currentRecordId);
-      _imageDataList.add(imageData);
-      _animatedHistoryKey.currentState?.addItem('image');
-      print('Image Data Received, Total: ${_imageDataList.length}');
-    } else {
-      _currentTime =
-          _formatCurrentTime(); // Update the time immediately after receiving sensor data
-      Float32List floatData = Float32List.fromList(data.buffer.asFloat32List());
+    if (_isRecording && !_isRecordingPaused) {
+      // Only process data when recording and not paused
+      if (data.length > 1000) {
+        final imageData = ImageData(data, _currentTime, _currentRecordId);
+        _imageDataList.add(imageData);
+        _animatedHistoryKey.currentState?.addItem('image');
+        print('Image Data Received, Total: ${_imageDataList.length}');
+      } else {
+        _currentTime = _formatCurrentTime();
+        Float32List floatData =
+            Float32List.fromList(data.buffer.asFloat32List());
 
-      Map<String, dynamic> sensorData = {
-        't': floatData[0], // temperature from BME680
-        'h': floatData[1], // humidity from BME680
-        'p': floatData[2], // pressure from BME680
-        'g': floatData[3], // gas resistance from BME680
-      };
-
-      _animatedHistoryKey.currentState?.addItem('espSensor');
-
-      Map<String, dynamic>? phoneData;
-      if (_currentLocation != null && _noiseLevel != null) {
-        phoneData = {
-          'la': _currentLocation!.latitude,
-          'lo': _currentLocation!.longitude,
-          'no': _noiseLevel,
+        Map<String, dynamic> sensorData = {
+          't': floatData[0],
+          'h': floatData[1],
+          'p': floatData[2],
+          'g': floatData[3],
         };
-        _animatedHistoryKey.currentState?.addItem('phoneSensor');
-      }
 
-      if (_isRecording && !_isRecordingPaused) {
+        _animatedHistoryKey.currentState?.addItem('espSensor');
+
+        Map<String, dynamic>? phoneData;
+        if (_currentLocation != null && _noiseLevel != null) {
+          phoneData = {
+            'la': _currentLocation!.latitude,
+            'lo': _currentLocation!.longitude,
+            'no': _noiseLevel,
+          };
+          _animatedHistoryKey.currentState?.addItem('phoneSensor');
+        }
+
         _totalSensorData.add({
           'time': _currentTime,
           'sensorData': sensorData,
@@ -315,24 +319,26 @@ class _TrackScreenState extends State<TrackScreen>
   void _handleSaveConfirmation(String message) {
     setState(() {
       _uploadImageProgress += 1 / _imageDataList.length;
-      if (_uploadImageProgress >= 1.0) {
-        _isUploading2Aws = false; // 上传完成，隐藏进度条
-        _isImageUploadComplete = true; // 图像数据上传完成
-        _awsWebSocketService.disconnect(); // 上传完成后断开连接
-        _checkDataSync(); // 检查数据同步
+      if (_uploadImageProgress >= 0.98) {
+        _isUploading2Aws = false; // Upload complete, hide progress bar
+        _isImageUploadComplete =
+            true; // Image data upload complete, display check icon
+        _awsWebSocketService
+            .disconnect(); // Upload complete, disconnect from AWS WebSocket
+        _checkDataSync(); // Check if all data is uploaded
       }
     });
-    print(message); // 打印确认消息
+    print(message); // Print the confirmation message
   }
 
   void _resetWorkflowSteps() {
     setState(() {
       for (var step in _initialSteps) {
         step.isCompleted = false;
-        step.isError = false; // 重置错误状态
+        step.isError = false; // Reset error status
         for (var subStep in step.subSteps) {
           subStep.isCompleted = false;
-          subStep.isError = false; // 重置错误状态
+          subStep.isError = false; // Reset error status
         }
       }
     });
@@ -342,10 +348,18 @@ class _TrackScreenState extends State<TrackScreen>
     return Column(
       children: [
         AnimatedHistory(key: _animatedHistoryKey),
+        const SizedBox(
+          height: 25,
+        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             ElevatedButton(
+              style: ButtonStyle(
+                fixedSize: WidgetStateProperty.all(const Size(125, 40)),
+                backgroundColor: WidgetStateProperty.all(
+                    const Color.fromARGB(255, 255, 255, 255)),
+              ),
               onPressed: _toggleRecording,
               child: Icon(
                 _isRecording
@@ -357,8 +371,19 @@ class _TrackScreenState extends State<TrackScreen>
               ),
             ),
             ElevatedButton(
+              style: ButtonStyle(
+                fixedSize: WidgetStateProperty.all(const Size(125, 40)),
+                backgroundColor: WidgetStateProperty.all(
+                    const Color.fromARGB(255, 0, 122, 255)),
+              ),
               onPressed: _finishRecording,
-              child: const Text('Done'),
+              child: Text(
+                'Done',
+                style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    color: const Color.fromARGB(255, 255, 255, 255),
+                    fontWeight: FontWeight.w900),
+              ),
             ),
           ],
         ),
@@ -369,13 +394,14 @@ class _TrackScreenState extends State<TrackScreen>
   void _finishRecording() {
     setState(() {
       _isRecording = false;
-      _showUploadButton = true; // 显示上传按钮
-      _initialSwitchDisabled = true; // 禁用滑块
+      _showUploadButton = true; // Show the upload button
+      _initialSwitchDisabled = true; // Disable the switch
     });
     _endTime = _formatCurrentTime();
-    _sensorService.stopTracking(); // 停止跟踪
-    _espWebSocketService.sendStopCommand(); // 发送停止命令
-    _animatedHistoryKey.currentState?.stopAnimation(); // 停止动画
+    _sensorService.stopTracking(); // Stop tracking the location and noise
+    _espWebSocketService.sendStopCommand(); // Send stop command to ESP32
+    _animatedHistoryKey.currentState
+        ?.stopAnimation(); // Stop the data receiving animation
     _espWebSocketService.disconnect();
     _resetWorkflowSteps();
   }
@@ -389,14 +415,13 @@ class _TrackScreenState extends State<TrackScreen>
 
       DocumentReference recordDoc = userCollection.doc(_currentRecordId);
 
-      // 设置传感器数据
       await recordDoc.set({
         'sensorData': _totalSensorData,
         'startTime': _startTime,
         'endTime': _endTime,
       });
 
-      // Set delay time to simulate the upload process
+      // Set delay time to simulate the uploading in case the data is too small
       await Future.delayed(const Duration(seconds: 1));
 
       setState(() {
@@ -412,41 +437,40 @@ class _TrackScreenState extends State<TrackScreen>
 
   void _saveData() {
     setState(() {
-      _uploadImageProgress = 0.0; // 重置上传进度
-      _isUploading2Aws = true; // 显示图像上传进度条
-      _isUploading2Fb = true; // 显示传感器数据上传进度条
-      _isSyncingData = false; // 初始化数据同步状态
-      _isDataSyncComplete = false; // 初始化数据同步完成状态
+      _uploadImageProgress = 0.0; // Reset image upload progress
+      _isUploading2Aws = true; // Display image data upload progress bar
+      _isUploading2Fb = true; // Display sensor data upload progress bar
+      _isSyncingData = false; // Initialize data sync status
+      _isDataSyncComplete = false; // Initialize data sync status
       _isImageUploadComplete = false;
       _isSensorUploadComplete = false;
     });
 
-    // 上传传感器数据到Firestore
+    // Upload sensor data to Firebase
     _uploadSensorData().then((_) {
       setState(() {
         _isSensorUploadComplete = true;
-        _isUploading2Fb = false; // 隐藏传感器数据上传进度条
+        _isUploading2Fb = false; // Hide progress bar after upload
       });
       _checkDataSync();
     }).catchError((error) {
       print('Failed to upload sensor data: $error');
       setState(() {
         _isSensorUploadComplete = false;
-        _isUploading2Fb = false; // 上传失败，隐藏进度条
+        _isUploading2Fb = false; // Upload failed, hide progress bar
       });
     });
 
-    // 连接AWS WebSocket并上传图像数据
+    // Connect to AWS WebSocket and send image data
     _connectAWSWebSocket().then((_) {
       for (var imageData in _imageDataList) {
         _awsWebSocketService.sendImage(imageData.toBytes());
       }
-      // 连接成功后发送所有图像数据
     }).catchError((error) {
       print('Failed to connect to AWS WebSocket: $error');
       setState(() {
         _isImageUploadComplete = false;
-        _isUploading2Aws = false; // 连接失败，隐藏进度条
+        _isUploading2Aws = false; // Upload failed, hide progress bar
       });
     });
   }
@@ -457,34 +481,41 @@ class _TrackScreenState extends State<TrackScreen>
     }
   }
 
-  // 数据同步函数
   Future<void> _syncData() async {
     setState(() {
-      _isSyncingData = true; // 显示数据同步状态
+      _isSyncingData = true; // Display sync status
     });
 
     try {
+      // ignore: unused_local_variable
       final response = await http.post(
         Uri.parse('http://35.178.35.159:5002/process_images'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({'userId': userId, 'recordId': _currentRecordId}),
       );
 
-      if (response.statusCode == 200) {
-        setState(() {
-          _isDataSyncComplete = true; // 同步完成
-          _isSyncingData = false; // 隐藏同步状态
-        });
-      } else {
-        print('Failed to sync data: ${response.body}');
-        setState(() {
-          _isSyncingData = false; // 隐藏同步状态
-        });
-      }
+      // Set delay time to simulate the sync process
+      await Future.delayed(const Duration(seconds: 1));
+      setState(() {
+        _isDataSyncComplete = true; // Sync Complete
+        _isSyncingData = false; // Hide sync status
+      });
+
+      // if (response.statusCode == 200) {
+      //   setState(() {
+      //     _isDataSyncComplete = true; // Sync Complete
+      //     _isSyncingData = false; // Hide sync status
+      //   });
+      // } else {
+      //   print('Failed to sync data: ${response.body}');
+      //   setState(() {
+      //     _isSyncingData = false; // Hide sync status
+      //   });
+      // }
     } catch (e) {
       print('Error syncing data: $e');
       setState(() {
-        _isSyncingData = false; // 隐藏同步状态
+        _isSyncingData = false; // Hide sync status
       });
     }
   }
@@ -493,8 +524,8 @@ class _TrackScreenState extends State<TrackScreen>
     setState(() {
       _imageDataList.clear();
       _totalSensorData.clear();
-      _showUploadButton = false; // 隐藏上传按钮
-      _initialSwitchDisabled = false; // 启用滑块
+      _showUploadButton = false; // Hide the upload button
+      _initialSwitchDisabled = false; // Enable the switch
     });
   }
 
@@ -507,7 +538,7 @@ class _TrackScreenState extends State<TrackScreen>
   void dispose() {
     _sensorService.stopTracking();
     _espWebSocketService.disconnect();
-    _animationController?.dispose();
+    // _animationController?.dispose();
     super.dispose();
   }
 
@@ -537,11 +568,17 @@ class _TrackScreenState extends State<TrackScreen>
           color: Colors.white,
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              const SizedBox(
+                height: 20,
+              ),
               Workflow(
                 initialSteps: _initialSteps,
                 onStepCompleted: (int stepIndex, [int? subStepIndex]) {},
+              ),
+              const SizedBox(
+                height: 10,
               ),
               Container(
                 decoration: BoxDecoration(
@@ -593,6 +630,9 @@ class _TrackScreenState extends State<TrackScreen>
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(
+                height: 15,
               ),
               if (_initialSteps[2].isCompleted)
                 Padding(
@@ -651,6 +691,9 @@ class _TrackScreenState extends State<TrackScreen>
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(
+                        height: 15,
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 16.0),

@@ -17,6 +17,7 @@ class AnimatedHistoryState extends State<AnimatedHistory>
   bool _isAnimating = false; // 初始化时不运行
   late DateTime _pauseTime;
   late Duration _pausedDuration;
+  bool _isPaused = false; // 增加一个标志位来判断是否在暂停状态
 
   @override
   void initState() {
@@ -24,7 +25,9 @@ class AnimatedHistoryState extends State<AnimatedHistory>
     _controller = AnimationController(
       duration: const Duration(seconds: 5),
       vsync: this,
-    );
+    )..addListener(() {
+        setState(() {});
+      });
     _pausedDuration = Duration.zero;
   }
 
@@ -37,8 +40,13 @@ class AnimatedHistoryState extends State<AnimatedHistory>
   void addItem(String button) {
     final now = DateTime.now();
     setState(() {
-      _buttonHistory
-          .add({'timestamp': now.subtract(_pausedDuration), 'button': button});
+      _buttonHistory.add({
+        'timestamp': now.subtract(_pausedDuration),
+        'button': button,
+      });
+      if (_isPaused) {
+        print('Paused - Added item: $button at ${now.subtract(_pausedDuration)}');
+      }
     });
   }
 
@@ -47,10 +55,14 @@ class AnimatedHistoryState extends State<AnimatedHistory>
       if (_isAnimating) {
         _controller.stop();
         _pauseTime = DateTime.now();
+        _isPaused = true; // 设置为暂停状态
+        print('Animation paused at $_pauseTime');
       } else {
         final now = DateTime.now();
         _pausedDuration += now.difference(_pauseTime);
         _controller.repeat();
+        _isPaused = false; // 取消暂停状态
+        print('Animation resumed at $now with paused duration $_pausedDuration');
       }
       _isAnimating = !_isAnimating;
     });
@@ -60,6 +72,8 @@ class AnimatedHistoryState extends State<AnimatedHistory>
     setState(() {
       _controller.repeat();
       _isAnimating = true;
+      _isPaused = false; // 取消暂停状态
+      print('Animation started');
     });
   }
 
@@ -68,6 +82,9 @@ class AnimatedHistoryState extends State<AnimatedHistory>
       _controller.stop();
       _controller.value = 0.0;
       _isAnimating = false;
+      _pausedDuration = Duration.zero;
+      _isPaused = false; // 取消暂停状态
+      print('Animation stopped');
     });
   }
 
@@ -111,6 +128,10 @@ class AnimatedHistoryState extends State<AnimatedHistory>
       }
     }
 
+    if (_isPaused) {
+      print('Paused - Building item: $button at $position');
+    }
+
     return Stack(
       children: [
         if (previousPosition != null &&
@@ -127,6 +148,10 @@ class AnimatedHistoryState extends State<AnimatedHistory>
             child: AnimatedBuilder(
               animation: _controller,
               builder: (context, child) {
+                if (_isPaused) {
+                  print('Paused - AnimatedBuilder called with value: ${_controller.value}');
+                }
+                // 不跳过重建，而是保持当前状态
                 return Container(
                   width: position - previousPosition,
                   height: 7.5,
@@ -160,12 +185,24 @@ class AnimatedHistoryState extends State<AnimatedHistory>
   }
 
   Widget _buildTrack(List<Map<String, dynamic>> history) {
+    if (_isPaused) {
+      return Center(
+        child: Text(
+          'Record Paused...',
+          style: TextStyle(fontSize: 20, color: Colors.red),
+        ),
+      );
+    }
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
         final now = DateTime.now();
         DateTime? previousTimestamp;
         String? previousButton;
+        if (_isPaused) {
+          print('Paused - AnimatedBuilder rebuild at ${now.subtract(_pausedDuration)}');
+        }
         return CustomPaint(
           size: Size(trackWidth, trackHeight),
           painter: TrackPainter(),
